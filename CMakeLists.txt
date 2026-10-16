@@ -102,7 +102,7 @@ if(CMAKE_HOST_WIN32)
     # CMakeLists.txt.
     option(GEN_FILES "Generate the auto-generated files as needed" OFF) # off in development
 else()
-    option(GEN_FILES "Generate the auto-generated files as needed" ON)
+    option(GEN_FILES "Generate the auto-generated files as needed" OFF)
 endif()
 
 # Support for package config and install to be added later.
