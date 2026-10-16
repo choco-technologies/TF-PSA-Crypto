@@ -6,6 +6,7 @@
  */
 
 #include "tf_psa_crypto_common.h"
+#include "mbedtls/dmod.h"
 
 #if defined(MBEDTLS_ECP_LIGHT)
 
@@ -22,7 +23,12 @@
 
 #include <string.h>
 
+#if defined(MBEDTLS_DMOD_C)
+/* Pointer fields are populated from GOT slots once during module startup. */
+#define ECP_MPI_INIT(_p, _n) { .p = NULL, .s = 1, .n = (_n) }
+#else
 #define ECP_MPI_INIT(_p, _n) { .p = (mbedtls_mpi_uint *) (_p), .s = 1, .n = (_n) }
+#endif
 
 #define ECP_MPI_INIT_ARRAY(x)   \
     ECP_MPI_INIT(x, sizeof(x) / sizeof(mbedtls_mpi_uint))
@@ -276,7 +282,7 @@ static const mbedtls_mpi_uint secp256r1_T_15_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x50, 0x11, 0x11, 0x24, 0x4F, 0x4C, 0x79, 0x61),
     MBEDTLS_BYTES_TO_T_UINT_8(0x17, 0x3A, 0x72, 0xBC, 0xFE, 0x72, 0x58, 0x43),
 };
-static const mbedtls_ecp_point secp256r1_T[16] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point secp256r1_T[16] = {
     ECP_POINT_INIT_XY_Z1(secp256r1_T_0_X, secp256r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(secp256r1_T_1_X, secp256r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(secp256r1_T_2_X, secp256r1_T_2_Y),
@@ -294,6 +300,36 @@ static const mbedtls_ecp_point secp256r1_T[16] = {
     ECP_POINT_INIT_XY_Z0(secp256r1_T_14_X, secp256r1_T_14_Y),
     ECP_POINT_INIT_XY_Z0(secp256r1_T_15_X, secp256r1_T_15_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_secp256r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_secp256r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    secp256r1_T_0_X, secp256r1_T_0_Y,
+    secp256r1_T_1_X, secp256r1_T_1_Y,
+    secp256r1_T_2_X, secp256r1_T_2_Y,
+    secp256r1_T_3_X, secp256r1_T_3_Y,
+    secp256r1_T_4_X, secp256r1_T_4_Y,
+    secp256r1_T_5_X, secp256r1_T_5_Y,
+    secp256r1_T_6_X, secp256r1_T_6_Y,
+    secp256r1_T_7_X, secp256r1_T_7_Y,
+    secp256r1_T_8_X, secp256r1_T_8_Y,
+    secp256r1_T_9_X, secp256r1_T_9_Y,
+    secp256r1_T_10_X, secp256r1_T_10_Y,
+    secp256r1_T_11_X, secp256r1_T_11_Y,
+    secp256r1_T_12_X, secp256r1_T_12_Y,
+    secp256r1_T_13_X, secp256r1_T_13_Y,
+    secp256r1_T_14_X, secp256r1_T_14_Y,
+    secp256r1_T_15_X, secp256r1_T_15_Y,
+    mpi_one
+};
+static void dmod_init_secp256r1_T(void)
+{
+    for (size_t i = 0; i < 16; ++i) {
+        secp256r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_secp256r1_T_coordinates[2 * i];
+        secp256r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_secp256r1_T_coordinates[2 * i + 1];
+    }
+    secp256r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_secp256r1_T_coordinates[32];
+}
+#endif
 #else
 #define secp256r1_T NULL
 #endif
@@ -857,7 +893,7 @@ static const mbedtls_mpi_uint secp384r1_T_31_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x95, 0x43, 0x41, 0xFE, 0x9B, 0xB6, 0xF0, 0xA5),
     MBEDTLS_BYTES_TO_T_UINT_8(0xB4, 0x97, 0xAE, 0xAD, 0x89, 0x88, 0x9E, 0x41),
 };
-static const mbedtls_ecp_point secp384r1_T[32] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point secp384r1_T[32] = {
     ECP_POINT_INIT_XY_Z1(secp384r1_T_0_X, secp384r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(secp384r1_T_1_X, secp384r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(secp384r1_T_2_X, secp384r1_T_2_Y),
@@ -891,6 +927,52 @@ static const mbedtls_ecp_point secp384r1_T[32] = {
     ECP_POINT_INIT_XY_Z0(secp384r1_T_30_X, secp384r1_T_30_Y),
     ECP_POINT_INIT_XY_Z0(secp384r1_T_31_X, secp384r1_T_31_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_secp384r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_secp384r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    secp384r1_T_0_X, secp384r1_T_0_Y,
+    secp384r1_T_1_X, secp384r1_T_1_Y,
+    secp384r1_T_2_X, secp384r1_T_2_Y,
+    secp384r1_T_3_X, secp384r1_T_3_Y,
+    secp384r1_T_4_X, secp384r1_T_4_Y,
+    secp384r1_T_5_X, secp384r1_T_5_Y,
+    secp384r1_T_6_X, secp384r1_T_6_Y,
+    secp384r1_T_7_X, secp384r1_T_7_Y,
+    secp384r1_T_8_X, secp384r1_T_8_Y,
+    secp384r1_T_9_X, secp384r1_T_9_Y,
+    secp384r1_T_10_X, secp384r1_T_10_Y,
+    secp384r1_T_11_X, secp384r1_T_11_Y,
+    secp384r1_T_12_X, secp384r1_T_12_Y,
+    secp384r1_T_13_X, secp384r1_T_13_Y,
+    secp384r1_T_14_X, secp384r1_T_14_Y,
+    secp384r1_T_15_X, secp384r1_T_15_Y,
+    secp384r1_T_16_X, secp384r1_T_16_Y,
+    secp384r1_T_17_X, secp384r1_T_17_Y,
+    secp384r1_T_18_X, secp384r1_T_18_Y,
+    secp384r1_T_19_X, secp384r1_T_19_Y,
+    secp384r1_T_20_X, secp384r1_T_20_Y,
+    secp384r1_T_21_X, secp384r1_T_21_Y,
+    secp384r1_T_22_X, secp384r1_T_22_Y,
+    secp384r1_T_23_X, secp384r1_T_23_Y,
+    secp384r1_T_24_X, secp384r1_T_24_Y,
+    secp384r1_T_25_X, secp384r1_T_25_Y,
+    secp384r1_T_26_X, secp384r1_T_26_Y,
+    secp384r1_T_27_X, secp384r1_T_27_Y,
+    secp384r1_T_28_X, secp384r1_T_28_Y,
+    secp384r1_T_29_X, secp384r1_T_29_Y,
+    secp384r1_T_30_X, secp384r1_T_30_Y,
+    secp384r1_T_31_X, secp384r1_T_31_Y,
+    mpi_one
+};
+static void dmod_init_secp384r1_T(void)
+{
+    for (size_t i = 0; i < 32; ++i) {
+        secp384r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_secp384r1_T_coordinates[2 * i];
+        secp384r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_secp384r1_T_coordinates[2 * i + 1];
+    }
+    secp384r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_secp384r1_T_coordinates[64];
+}
+#endif
 #else
 #define secp384r1_T NULL
 #endif
@@ -1661,7 +1743,7 @@ static const mbedtls_mpi_uint secp521r1_T_31_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x71, 0x92, 0x0E, 0xC3, 0xF2, 0x58, 0xE8, 0x51),
     MBEDTLS_BYTES_TO_T_UINT_8(0xE9, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
 };
-static const mbedtls_ecp_point secp521r1_T[32] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point secp521r1_T[32] = {
     ECP_POINT_INIT_XY_Z1(secp521r1_T_0_X, secp521r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(secp521r1_T_1_X, secp521r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(secp521r1_T_2_X, secp521r1_T_2_Y),
@@ -1695,6 +1777,52 @@ static const mbedtls_ecp_point secp521r1_T[32] = {
     ECP_POINT_INIT_XY_Z0(secp521r1_T_30_X, secp521r1_T_30_Y),
     ECP_POINT_INIT_XY_Z0(secp521r1_T_31_X, secp521r1_T_31_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_secp521r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_secp521r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    secp521r1_T_0_X, secp521r1_T_0_Y,
+    secp521r1_T_1_X, secp521r1_T_1_Y,
+    secp521r1_T_2_X, secp521r1_T_2_Y,
+    secp521r1_T_3_X, secp521r1_T_3_Y,
+    secp521r1_T_4_X, secp521r1_T_4_Y,
+    secp521r1_T_5_X, secp521r1_T_5_Y,
+    secp521r1_T_6_X, secp521r1_T_6_Y,
+    secp521r1_T_7_X, secp521r1_T_7_Y,
+    secp521r1_T_8_X, secp521r1_T_8_Y,
+    secp521r1_T_9_X, secp521r1_T_9_Y,
+    secp521r1_T_10_X, secp521r1_T_10_Y,
+    secp521r1_T_11_X, secp521r1_T_11_Y,
+    secp521r1_T_12_X, secp521r1_T_12_Y,
+    secp521r1_T_13_X, secp521r1_T_13_Y,
+    secp521r1_T_14_X, secp521r1_T_14_Y,
+    secp521r1_T_15_X, secp521r1_T_15_Y,
+    secp521r1_T_16_X, secp521r1_T_16_Y,
+    secp521r1_T_17_X, secp521r1_T_17_Y,
+    secp521r1_T_18_X, secp521r1_T_18_Y,
+    secp521r1_T_19_X, secp521r1_T_19_Y,
+    secp521r1_T_20_X, secp521r1_T_20_Y,
+    secp521r1_T_21_X, secp521r1_T_21_Y,
+    secp521r1_T_22_X, secp521r1_T_22_Y,
+    secp521r1_T_23_X, secp521r1_T_23_Y,
+    secp521r1_T_24_X, secp521r1_T_24_Y,
+    secp521r1_T_25_X, secp521r1_T_25_Y,
+    secp521r1_T_26_X, secp521r1_T_26_Y,
+    secp521r1_T_27_X, secp521r1_T_27_Y,
+    secp521r1_T_28_X, secp521r1_T_28_Y,
+    secp521r1_T_29_X, secp521r1_T_29_Y,
+    secp521r1_T_30_X, secp521r1_T_30_Y,
+    secp521r1_T_31_X, secp521r1_T_31_Y,
+    mpi_one
+};
+static void dmod_init_secp521r1_T(void)
+{
+    for (size_t i = 0; i < 32; ++i) {
+        secp521r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_secp521r1_T_coordinates[2 * i];
+        secp521r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_secp521r1_T_coordinates[2 * i + 1];
+    }
+    secp521r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_secp521r1_T_coordinates[64];
+}
+#endif
 #else
 #define secp521r1_T NULL
 #endif
@@ -1925,7 +2053,7 @@ static const mbedtls_mpi_uint secp256k1_T_15_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x4F, 0x8F, 0xCD, 0x0A, 0x9C, 0xF4, 0xBD, 0x95),
     MBEDTLS_BYTES_TO_T_UINT_8(0x37, 0x89, 0x7F, 0x8A, 0xB1, 0x52, 0x3A, 0xAB),
 };
-static const mbedtls_ecp_point secp256k1_T[16] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point secp256k1_T[16] = {
     ECP_POINT_INIT_XY_Z1(secp256k1_T_0_X, secp256k1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(secp256k1_T_1_X, secp256k1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(secp256k1_T_2_X, secp256k1_T_2_Y),
@@ -1943,6 +2071,36 @@ static const mbedtls_ecp_point secp256k1_T[16] = {
     ECP_POINT_INIT_XY_Z0(secp256k1_T_14_X, secp256k1_T_14_Y),
     ECP_POINT_INIT_XY_Z0(secp256k1_T_15_X, secp256k1_T_15_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_secp256k1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_secp256k1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    secp256k1_T_0_X, secp256k1_T_0_Y,
+    secp256k1_T_1_X, secp256k1_T_1_Y,
+    secp256k1_T_2_X, secp256k1_T_2_Y,
+    secp256k1_T_3_X, secp256k1_T_3_Y,
+    secp256k1_T_4_X, secp256k1_T_4_Y,
+    secp256k1_T_5_X, secp256k1_T_5_Y,
+    secp256k1_T_6_X, secp256k1_T_6_Y,
+    secp256k1_T_7_X, secp256k1_T_7_Y,
+    secp256k1_T_8_X, secp256k1_T_8_Y,
+    secp256k1_T_9_X, secp256k1_T_9_Y,
+    secp256k1_T_10_X, secp256k1_T_10_Y,
+    secp256k1_T_11_X, secp256k1_T_11_Y,
+    secp256k1_T_12_X, secp256k1_T_12_Y,
+    secp256k1_T_13_X, secp256k1_T_13_Y,
+    secp256k1_T_14_X, secp256k1_T_14_Y,
+    secp256k1_T_15_X, secp256k1_T_15_Y,
+    mpi_one
+};
+static void dmod_init_secp256k1_T(void)
+{
+    for (size_t i = 0; i < 16; ++i) {
+        secp256k1_T[i].X.p = (mbedtls_mpi_uint *) dmod_secp256k1_T_coordinates[2 * i];
+        secp256k1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_secp256k1_T_coordinates[2 * i + 1];
+    }
+    secp256k1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_secp256k1_T_coordinates[32];
+}
+#endif
 #else
 #define secp256k1_T NULL
 #endif
@@ -2182,7 +2340,7 @@ static const mbedtls_mpi_uint brainpoolP256r1_T_15_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0xAD, 0xA1, 0xE5, 0x5C, 0xC9, 0x1D, 0x44, 0x45),
     MBEDTLS_BYTES_TO_T_UINT_8(0xD4, 0xE8, 0xE6, 0x6F, 0xBB, 0xC1, 0x81, 0x7F),
 };
-static const mbedtls_ecp_point brainpoolP256r1_T[16] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point brainpoolP256r1_T[16] = {
     ECP_POINT_INIT_XY_Z1(brainpoolP256r1_T_0_X, brainpoolP256r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP256r1_T_1_X, brainpoolP256r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP256r1_T_2_X, brainpoolP256r1_T_2_Y),
@@ -2200,6 +2358,36 @@ static const mbedtls_ecp_point brainpoolP256r1_T[16] = {
     ECP_POINT_INIT_XY_Z0(brainpoolP256r1_T_14_X, brainpoolP256r1_T_14_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP256r1_T_15_X, brainpoolP256r1_T_15_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_brainpoolP256r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_brainpoolP256r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    brainpoolP256r1_T_0_X, brainpoolP256r1_T_0_Y,
+    brainpoolP256r1_T_1_X, brainpoolP256r1_T_1_Y,
+    brainpoolP256r1_T_2_X, brainpoolP256r1_T_2_Y,
+    brainpoolP256r1_T_3_X, brainpoolP256r1_T_3_Y,
+    brainpoolP256r1_T_4_X, brainpoolP256r1_T_4_Y,
+    brainpoolP256r1_T_5_X, brainpoolP256r1_T_5_Y,
+    brainpoolP256r1_T_6_X, brainpoolP256r1_T_6_Y,
+    brainpoolP256r1_T_7_X, brainpoolP256r1_T_7_Y,
+    brainpoolP256r1_T_8_X, brainpoolP256r1_T_8_Y,
+    brainpoolP256r1_T_9_X, brainpoolP256r1_T_9_Y,
+    brainpoolP256r1_T_10_X, brainpoolP256r1_T_10_Y,
+    brainpoolP256r1_T_11_X, brainpoolP256r1_T_11_Y,
+    brainpoolP256r1_T_12_X, brainpoolP256r1_T_12_Y,
+    brainpoolP256r1_T_13_X, brainpoolP256r1_T_13_Y,
+    brainpoolP256r1_T_14_X, brainpoolP256r1_T_14_Y,
+    brainpoolP256r1_T_15_X, brainpoolP256r1_T_15_Y,
+    mpi_one
+};
+static void dmod_init_brainpoolP256r1_T(void)
+{
+    for (size_t i = 0; i < 16; ++i) {
+        brainpoolP256r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_brainpoolP256r1_T_coordinates[2 * i];
+        brainpoolP256r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_brainpoolP256r1_T_coordinates[2 * i + 1];
+    }
+    brainpoolP256r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_brainpoolP256r1_T_coordinates[32];
+}
+#endif
 #else
 #define brainpoolP256r1_T NULL
 #endif
@@ -2772,7 +2960,7 @@ static const mbedtls_mpi_uint brainpoolP384r1_T_31_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0xF5, 0xCE, 0x85, 0x5F, 0xAC, 0xAA, 0x82, 0x10),
     MBEDTLS_BYTES_TO_T_UINT_8(0x83, 0x57, 0x69, 0x90, 0x76, 0xF3, 0x53, 0x3F),
 };
-static const mbedtls_ecp_point brainpoolP384r1_T[32] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point brainpoolP384r1_T[32] = {
     ECP_POINT_INIT_XY_Z1(brainpoolP384r1_T_0_X, brainpoolP384r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP384r1_T_1_X, brainpoolP384r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP384r1_T_2_X, brainpoolP384r1_T_2_Y),
@@ -2806,6 +2994,52 @@ static const mbedtls_ecp_point brainpoolP384r1_T[32] = {
     ECP_POINT_INIT_XY_Z0(brainpoolP384r1_T_30_X, brainpoolP384r1_T_30_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP384r1_T_31_X, brainpoolP384r1_T_31_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_brainpoolP384r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_brainpoolP384r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    brainpoolP384r1_T_0_X, brainpoolP384r1_T_0_Y,
+    brainpoolP384r1_T_1_X, brainpoolP384r1_T_1_Y,
+    brainpoolP384r1_T_2_X, brainpoolP384r1_T_2_Y,
+    brainpoolP384r1_T_3_X, brainpoolP384r1_T_3_Y,
+    brainpoolP384r1_T_4_X, brainpoolP384r1_T_4_Y,
+    brainpoolP384r1_T_5_X, brainpoolP384r1_T_5_Y,
+    brainpoolP384r1_T_6_X, brainpoolP384r1_T_6_Y,
+    brainpoolP384r1_T_7_X, brainpoolP384r1_T_7_Y,
+    brainpoolP384r1_T_8_X, brainpoolP384r1_T_8_Y,
+    brainpoolP384r1_T_9_X, brainpoolP384r1_T_9_Y,
+    brainpoolP384r1_T_10_X, brainpoolP384r1_T_10_Y,
+    brainpoolP384r1_T_11_X, brainpoolP384r1_T_11_Y,
+    brainpoolP384r1_T_12_X, brainpoolP384r1_T_12_Y,
+    brainpoolP384r1_T_13_X, brainpoolP384r1_T_13_Y,
+    brainpoolP384r1_T_14_X, brainpoolP384r1_T_14_Y,
+    brainpoolP384r1_T_15_X, brainpoolP384r1_T_15_Y,
+    brainpoolP384r1_T_16_X, brainpoolP384r1_T_16_Y,
+    brainpoolP384r1_T_17_X, brainpoolP384r1_T_17_Y,
+    brainpoolP384r1_T_18_X, brainpoolP384r1_T_18_Y,
+    brainpoolP384r1_T_19_X, brainpoolP384r1_T_19_Y,
+    brainpoolP384r1_T_20_X, brainpoolP384r1_T_20_Y,
+    brainpoolP384r1_T_21_X, brainpoolP384r1_T_21_Y,
+    brainpoolP384r1_T_22_X, brainpoolP384r1_T_22_Y,
+    brainpoolP384r1_T_23_X, brainpoolP384r1_T_23_Y,
+    brainpoolP384r1_T_24_X, brainpoolP384r1_T_24_Y,
+    brainpoolP384r1_T_25_X, brainpoolP384r1_T_25_Y,
+    brainpoolP384r1_T_26_X, brainpoolP384r1_T_26_Y,
+    brainpoolP384r1_T_27_X, brainpoolP384r1_T_27_Y,
+    brainpoolP384r1_T_28_X, brainpoolP384r1_T_28_Y,
+    brainpoolP384r1_T_29_X, brainpoolP384r1_T_29_Y,
+    brainpoolP384r1_T_30_X, brainpoolP384r1_T_30_Y,
+    brainpoolP384r1_T_31_X, brainpoolP384r1_T_31_Y,
+    mpi_one
+};
+static void dmod_init_brainpoolP384r1_T(void)
+{
+    for (size_t i = 0; i < 32; ++i) {
+        brainpoolP384r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_brainpoolP384r1_T_coordinates[2 * i];
+        brainpoolP384r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_brainpoolP384r1_T_coordinates[2 * i + 1];
+    }
+    brainpoolP384r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_brainpoolP384r1_T_coordinates[64];
+}
+#endif
 #else
 #define brainpoolP384r1_T NULL
 #endif
@@ -3518,7 +3752,7 @@ static const mbedtls_mpi_uint brainpoolP512r1_T_31_Y[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x3F, 0x4C, 0x64, 0x59, 0x0A, 0xF9, 0x02, 0xC4),
     MBEDTLS_BYTES_TO_T_UINT_8(0x41, 0x4F, 0x23, 0xA2, 0xC3, 0xD5, 0xEF, 0x42),
 };
-static const mbedtls_ecp_point brainpoolP512r1_T[32] = {
+static MBEDTLS_DMOD_CONST mbedtls_ecp_point brainpoolP512r1_T[32] = {
     ECP_POINT_INIT_XY_Z1(brainpoolP512r1_T_0_X, brainpoolP512r1_T_0_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP512r1_T_1_X, brainpoolP512r1_T_1_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP512r1_T_2_X, brainpoolP512r1_T_2_Y),
@@ -3552,6 +3786,52 @@ static const mbedtls_ecp_point brainpoolP512r1_T[32] = {
     ECP_POINT_INIT_XY_Z0(brainpoolP512r1_T_30_X, brainpoolP512r1_T_30_Y),
     ECP_POINT_INIT_XY_Z0(brainpoolP512r1_T_31_X, brainpoolP512r1_T_31_Y),
 };
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_brainpoolP512r1_T 1
+static const mbedtls_mpi_uint * const volatile dmod_brainpoolP512r1_T_coordinates[] DMOD_GLOBAL_POINTER = {
+    brainpoolP512r1_T_0_X, brainpoolP512r1_T_0_Y,
+    brainpoolP512r1_T_1_X, brainpoolP512r1_T_1_Y,
+    brainpoolP512r1_T_2_X, brainpoolP512r1_T_2_Y,
+    brainpoolP512r1_T_3_X, brainpoolP512r1_T_3_Y,
+    brainpoolP512r1_T_4_X, brainpoolP512r1_T_4_Y,
+    brainpoolP512r1_T_5_X, brainpoolP512r1_T_5_Y,
+    brainpoolP512r1_T_6_X, brainpoolP512r1_T_6_Y,
+    brainpoolP512r1_T_7_X, brainpoolP512r1_T_7_Y,
+    brainpoolP512r1_T_8_X, brainpoolP512r1_T_8_Y,
+    brainpoolP512r1_T_9_X, brainpoolP512r1_T_9_Y,
+    brainpoolP512r1_T_10_X, brainpoolP512r1_T_10_Y,
+    brainpoolP512r1_T_11_X, brainpoolP512r1_T_11_Y,
+    brainpoolP512r1_T_12_X, brainpoolP512r1_T_12_Y,
+    brainpoolP512r1_T_13_X, brainpoolP512r1_T_13_Y,
+    brainpoolP512r1_T_14_X, brainpoolP512r1_T_14_Y,
+    brainpoolP512r1_T_15_X, brainpoolP512r1_T_15_Y,
+    brainpoolP512r1_T_16_X, brainpoolP512r1_T_16_Y,
+    brainpoolP512r1_T_17_X, brainpoolP512r1_T_17_Y,
+    brainpoolP512r1_T_18_X, brainpoolP512r1_T_18_Y,
+    brainpoolP512r1_T_19_X, brainpoolP512r1_T_19_Y,
+    brainpoolP512r1_T_20_X, brainpoolP512r1_T_20_Y,
+    brainpoolP512r1_T_21_X, brainpoolP512r1_T_21_Y,
+    brainpoolP512r1_T_22_X, brainpoolP512r1_T_22_Y,
+    brainpoolP512r1_T_23_X, brainpoolP512r1_T_23_Y,
+    brainpoolP512r1_T_24_X, brainpoolP512r1_T_24_Y,
+    brainpoolP512r1_T_25_X, brainpoolP512r1_T_25_Y,
+    brainpoolP512r1_T_26_X, brainpoolP512r1_T_26_Y,
+    brainpoolP512r1_T_27_X, brainpoolP512r1_T_27_Y,
+    brainpoolP512r1_T_28_X, brainpoolP512r1_T_28_Y,
+    brainpoolP512r1_T_29_X, brainpoolP512r1_T_29_Y,
+    brainpoolP512r1_T_30_X, brainpoolP512r1_T_30_Y,
+    brainpoolP512r1_T_31_X, brainpoolP512r1_T_31_Y,
+    mpi_one
+};
+static void dmod_init_brainpoolP512r1_T(void)
+{
+    for (size_t i = 0; i < 32; ++i) {
+        brainpoolP512r1_T[i].X.p = (mbedtls_mpi_uint *) dmod_brainpoolP512r1_T_coordinates[2 * i];
+        brainpoolP512r1_T[i].Y.p = (mbedtls_mpi_uint *) dmod_brainpoolP512r1_T_coordinates[2 * i + 1];
+    }
+    brainpoolP512r1_T[0].Z.p = (mbedtls_mpi_uint *) dmod_brainpoolP512r1_T_coordinates[64];
+}
+#endif
 #else
 #define brainpoolP512r1_T NULL
 #endif
@@ -4794,5 +5074,32 @@ int mbedtls_ecp_modulus_setup(mbedtls_mpi_mod_modulus *N,
     return 0;
 }
 #endif /* MBEDTLS_TEST_HOOKS && MBEDTLS_ECP_WITH_MPI_UINT */
+
+#if defined(MBEDTLS_DMOD_C)
+void mbedtls_dmod_ecp_curves_init(void)
+{
+#if defined(DMOD_HAS_secp256r1_T)
+    dmod_init_secp256r1_T();
+#endif
+#if defined(DMOD_HAS_secp384r1_T)
+    dmod_init_secp384r1_T();
+#endif
+#if defined(DMOD_HAS_secp521r1_T)
+    dmod_init_secp521r1_T();
+#endif
+#if defined(DMOD_HAS_secp256k1_T)
+    dmod_init_secp256k1_T();
+#endif
+#if defined(DMOD_HAS_brainpoolP256r1_T)
+    dmod_init_brainpoolP256r1_T();
+#endif
+#if defined(DMOD_HAS_brainpoolP384r1_T)
+    dmod_init_brainpoolP384r1_T();
+#endif
+#if defined(DMOD_HAS_brainpoolP512r1_T)
+    dmod_init_brainpoolP512r1_T();
+#endif
+}
+#endif
 
 #endif /* MBEDTLS_ECP_LIGHT */

@@ -234,7 +234,11 @@ extern "C" {
  * \brief Base OID descriptor structure
  */
 typedef struct mbedtls_oid_descriptor_t {
-    const char *MBEDTLS_PRIVATE(asn1);               /*!< OID ASN.1 representation       */
+#if defined(MBEDTLS_DMOD_C)
+    char MBEDTLS_PRIVATE(asn1)[32];
+#else
+    const char *MBEDTLS_PRIVATE(asn1);
+#endif               /*!< OID ASN.1 representation       */
     size_t MBEDTLS_PRIVATE(asn1_len);                /*!< length of asn1                 */
 } mbedtls_oid_descriptor_t;
 

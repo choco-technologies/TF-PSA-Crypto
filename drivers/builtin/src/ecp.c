@@ -30,6 +30,7 @@
  */
 
 #include "tf_psa_crypto_common.h"
+#include "mbedtls/dmod.h"
 
 #if defined(MBEDTLS_ECP_LIGHT)
 
@@ -339,7 +340,7 @@ static const mbedtls_ecp_curve_info ecp_supported_curves[] =
 #if defined(MBEDTLS_ECP_DP_CURVE448_ENABLED)
     { MBEDTLS_ECP_DP_CURVE448,     30,     448,    "x448"              },
 #endif
-    { MBEDTLS_ECP_DP_NONE,          0,     0,      NULL                },
+    { MBEDTLS_ECP_DP_NONE,          0,     0,      MBEDTLS_DMOD_NULL_TEXT },
 };
 
 #define ECP_NB_CURVES   sizeof(ecp_supported_curves) /    \
@@ -2748,10 +2749,24 @@ static const mbedtls_mpi_uint x25519_bad_point_2[] = {
     MBEDTLS_BYTES_TO_T_UINT_8(0x04, 0x44, 0x5c, 0xc4, 0x58, 0x1c, 0x8e, 0x86),
     MBEDTLS_BYTES_TO_T_UINT_8(0xd8, 0x22, 0x4e, 0xdd, 0xd0, 0x9f, 0x11, 0x57),
 };
+#if defined(MBEDTLS_DMOD_C)
+static const mbedtls_mpi_uint * const volatile dmod_bad_point_1 DMOD_GLOBAL_POINTER = x25519_bad_point_1;
+static mbedtls_mpi ecp_x25519_bad_point_1 = {
+    .s = 1, .n = sizeof(x25519_bad_point_1) / sizeof(mbedtls_mpi_uint), .p = NULL
+};
+#else
 static const mbedtls_mpi ecp_x25519_bad_point_1 = ECP_MPI_INIT_ARRAY(
     x25519_bad_point_1);
+#endif
+#if defined(MBEDTLS_DMOD_C)
+static const mbedtls_mpi_uint * const volatile dmod_bad_point_2 DMOD_GLOBAL_POINTER = x25519_bad_point_2;
+static mbedtls_mpi ecp_x25519_bad_point_2 = {
+    .s = 1, .n = sizeof(x25519_bad_point_2) / sizeof(mbedtls_mpi_uint), .p = NULL
+};
+#else
 static const mbedtls_mpi ecp_x25519_bad_point_2 = ECP_MPI_INIT_ARRAY(
     x25519_bad_point_2);
+#endif
 #endif /* MBEDTLS_ECP_DP_CURVE25519_ENABLED */
 
 /*
@@ -3474,5 +3489,17 @@ cleanup:
 }
 
 #endif /* MBEDTLS_SELF_TEST */
+
+#if defined(MBEDTLS_DMOD_C)
+void mbedtls_dmod_ecp_curves_init(void);
+void mbedtls_dmod_ecp_init(void)
+{
+    mbedtls_dmod_ecp_curves_init();
+#if defined(MBEDTLS_ECP_DP_CURVE25519_ENABLED)
+    ecp_x25519_bad_point_1.p = (mbedtls_mpi_uint *) dmod_bad_point_1;
+    ecp_x25519_bad_point_2.p = (mbedtls_mpi_uint *) dmod_bad_point_2;
+#endif
+}
+#endif
 
 #endif /* MBEDTLS_ECP_LIGHT */

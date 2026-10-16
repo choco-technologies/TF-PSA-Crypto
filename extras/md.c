@@ -10,6 +10,7 @@
  */
 
 #include "tf_psa_crypto_common.h"
+#include "mbedtls/dmod.h"
 
 /*
  * Availability of functions in this module is controlled by two
@@ -894,7 +895,11 @@ const int *mbedtls_md_list(void)
 }
 
 typedef struct {
+#if defined(MBEDTLS_DMOD_C)
+    char md_name[12];
+#else
     const char *md_name;
+#endif
     mbedtls_md_type_t md_type;
 } md_name_entry;
 
@@ -933,7 +938,7 @@ static const md_name_entry md_names[] = {
 #if defined(PSA_WANT_ALG_SHA3_512)
     { "SHA3-512", MBEDTLS_MD_SHA3_512 },
 #endif
-    { NULL, MBEDTLS_MD_NONE },
+    { MBEDTLS_DMOD_NULL_TEXT, MBEDTLS_MD_NONE },
 };
 
 int mbedtls_md_hmac_setup(mbedtls_md_context_t *ctx, const mbedtls_md_info_t *md_info)
@@ -953,7 +958,7 @@ const mbedtls_md_info_t *mbedtls_md_info_from_string(const char *md_name)
     }
 
     const md_name_entry *entry = md_names;
-    while (entry->md_name != NULL &&
+    while (entry->md_type != MBEDTLS_MD_NONE &&
            strcmp(entry->md_name, md_name) != 0) {
         ++entry;
     }
@@ -973,7 +978,7 @@ const char *mbedtls_md_get_name(const mbedtls_md_info_t *md_info)
         ++entry;
     }
 
-    return entry->md_name;
+    return entry->md_type == MBEDTLS_MD_NONE ? NULL : entry->md_name;
 }
 
 const mbedtls_md_info_t *mbedtls_md_info_from_ctx(

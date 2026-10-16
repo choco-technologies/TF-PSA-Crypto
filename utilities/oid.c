@@ -8,6 +8,7 @@
  */
 
 #include "tf_psa_crypto_common.h"
+#include "mbedtls/dmod.h"
 
 #include "crypto_oid.h"
 #include "mbedtls/private/rsa.h"
@@ -32,7 +33,7 @@
  * fields are present for historical reasons and are no longer used.
  */
 #define OID_DESCRIPTOR(s, name, description)  { ADD_LEN(s) }
-#define NULL_OID_DESCRIPTOR                   { NULL, 0 }
+#define NULL_OID_DESCRIPTOR                   { MBEDTLS_DMOD_NULL_TEXT, 0 }
 
 /*
  * Macro to generate an internal function for oid_XXX_from_asn1() (used by
@@ -46,7 +47,7 @@
         const mbedtls_oid_descriptor_t *cur =                           \
             (const mbedtls_oid_descriptor_t *) p;                       \
         if (p == NULL || oid == NULL) return NULL;                  \
-        while (cur->asn1 != NULL) {                                    \
+        while (cur->asn1_len != 0) {                                    \
             if (cur->asn1_len == oid->len &&                            \
                 memcmp(cur->asn1, oid->p, oid->len) == 0) {          \
                 return p;                                            \
