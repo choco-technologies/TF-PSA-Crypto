@@ -31,6 +31,8 @@ typedef struct {
     mbedtls_svc_key_id_t pub_id;
 } mbedtls_pk_psa_restartable_ctx_t;
 
+#include "mbedtls/dmod.h"
+
 struct mbedtls_pk_info_t {
     /** Public key type */
     mbedtls_pk_type_t type;
@@ -75,20 +77,20 @@ struct mbedtls_pk_info_t {
 
 };
 #if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY)
-extern const mbedtls_pk_info_t mbedtls_rsa_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_rsa_info;
 #endif
 
 #if defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
-extern const mbedtls_pk_info_t mbedtls_eckey_info;
-extern const mbedtls_pk_info_t mbedtls_eckeydh_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_eckey_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_eckeydh_info;
 #endif
 
 #if defined(PSA_HAVE_ALG_SOME_ECDSA)
-extern const mbedtls_pk_info_t mbedtls_ecdsa_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_ecdsa_info;
 #endif
 
-extern const mbedtls_pk_info_t mbedtls_ecdsa_opaque_info;
-extern const mbedtls_pk_info_t mbedtls_rsa_opaque_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_ecdsa_opaque_info;
+extern MBEDTLS_DMOD_CONST mbedtls_pk_info_t mbedtls_rsa_opaque_info;
 
 #if defined(PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY)
 int mbedtls_pk_psa_rsa_sign_ext(psa_algorithm_t psa_alg_md,

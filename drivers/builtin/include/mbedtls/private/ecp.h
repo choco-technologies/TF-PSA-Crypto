@@ -134,7 +134,11 @@ typedef struct mbedtls_ecp_curve_info {
     mbedtls_ecp_group_id grp_id;    /*!< An internal identifier. */
     uint16_t tls_id;                /*!< The TLS NamedCurve identifier. */
     uint16_t bit_size;              /*!< The curve size in bits. */
-    const char *name;               /*!< A human-friendly name. */
+#if defined(MBEDTLS_DMOD_C)
+    char name[32];
+#else
+    const char *name;
+#endif               /*!< A human-friendly name. */
 } mbedtls_ecp_curve_info;
 #endif /* MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS */
 

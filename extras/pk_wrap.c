@@ -6,6 +6,7 @@
  */
 
 #include "tf_psa_crypto_common.h"
+#include "mbedtls/dmod.h"
 
 #include "mbedtls/platform_util.h"
 
@@ -121,6 +122,25 @@ static int rsa_sign_wrap(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
                                        sig, sig_size, sig_len);
 }
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_rsa_info 1
+mbedtls_pk_info_t mbedtls_rsa_info = { .type = MBEDTLS_PK_RSA };
+static __typeof__(mbedtls_rsa_info.name) const volatile dmod_mbedtls_rsa_info_name DMOD_GLOBAL_POINTER = "RSA";
+static __typeof__(mbedtls_rsa_info.can_do) const volatile dmod_mbedtls_rsa_info_can_do DMOD_GLOBAL_POINTER = rsa_can_do;
+static __typeof__(mbedtls_rsa_info.verify_func) const volatile dmod_mbedtls_rsa_info_verify_func DMOD_GLOBAL_POINTER = rsa_verify_wrap;
+static __typeof__(mbedtls_rsa_info.sign_func) const volatile dmod_mbedtls_rsa_info_sign_func DMOD_GLOBAL_POINTER = rsa_sign_wrap;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_rsa_info(void)
+{
+    mbedtls_rsa_info.name = dmod_mbedtls_rsa_info_name;
+    mbedtls_rsa_info.can_do = dmod_mbedtls_rsa_info_can_do;
+    mbedtls_rsa_info.verify_func = dmod_mbedtls_rsa_info_verify_func;
+    mbedtls_rsa_info.sign_func = dmod_mbedtls_rsa_info_sign_func;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_rsa_info = {
     .type = MBEDTLS_PK_RSA,
     .name = "RSA",
@@ -134,6 +154,7 @@ const mbedtls_pk_info_t mbedtls_rsa_info = {
     .rs_free_func = NULL,
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
 #endif /* PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY */
 
 #if defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
@@ -469,6 +490,63 @@ static int eckey_sign_rs_wrap(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_eckey_info 1
+mbedtls_pk_info_t mbedtls_eckey_info = { .type = MBEDTLS_PK_ECKEY };
+static __typeof__(mbedtls_eckey_info.name) const volatile dmod_mbedtls_eckey_info_name DMOD_GLOBAL_POINTER = "EC";
+static __typeof__(mbedtls_eckey_info.can_do) const volatile dmod_mbedtls_eckey_info_can_do DMOD_GLOBAL_POINTER = eckey_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_eckey_info.verify_func) const volatile dmod_mbedtls_eckey_info_verify_func DMOD_GLOBAL_POINTER = ecdsa_verify_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_eckey_info.sign_func) const volatile dmod_mbedtls_eckey_info_sign_func DMOD_GLOBAL_POINTER = ecdsa_sign_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_eckey_info.verify_rs_func) const volatile dmod_mbedtls_eckey_info_verify_rs_func DMOD_GLOBAL_POINTER = eckey_verify_rs_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_eckey_info.sign_rs_func) const volatile dmod_mbedtls_eckey_info_sign_rs_func DMOD_GLOBAL_POINTER = eckey_sign_rs_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN) || defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_eckey_info.rs_alloc_func) const volatile dmod_mbedtls_eckey_info_rs_alloc_func DMOD_GLOBAL_POINTER = eckey_rs_alloc;
+static __typeof__(mbedtls_eckey_info.rs_free_func) const volatile dmod_mbedtls_eckey_info_rs_free_func DMOD_GLOBAL_POINTER = eckey_rs_free;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN || PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN || PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_eckey_info(void)
+{
+    mbedtls_eckey_info.name = dmod_mbedtls_eckey_info_name;
+    mbedtls_eckey_info.can_do = dmod_mbedtls_eckey_info_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_eckey_info.verify_func = dmod_mbedtls_eckey_info_verify_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_eckey_info.sign_func = dmod_mbedtls_eckey_info_sign_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_eckey_info.verify_rs_func = dmod_mbedtls_eckey_info_verify_rs_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_eckey_info.sign_rs_func = dmod_mbedtls_eckey_info_sign_rs_func;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN) || defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_eckey_info.rs_alloc_func = dmod_mbedtls_eckey_info_rs_alloc_func;
+    mbedtls_eckey_info.rs_free_func = dmod_mbedtls_eckey_info_rs_free_func;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN || PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN || PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_eckey_info = {
     .type = MBEDTLS_PK_ECKEY,
     .name = "EC",
@@ -503,6 +581,7 @@ const mbedtls_pk_info_t mbedtls_eckey_info = {
 #endif /* PSA_HAVE_ALG_ECDSA_SIGN || PSA_HAVE_ALG_ECDSA_VERIFY */
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
 
 /*
  * EC key restricted to ECDH
@@ -513,6 +592,21 @@ static int eckeydh_can_do(mbedtls_pk_type_t type)
            type == MBEDTLS_PK_ECKEY_DH;
 }
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_eckeydh_info 1
+mbedtls_pk_info_t mbedtls_eckeydh_info = { .type = MBEDTLS_PK_ECKEY_DH };
+static __typeof__(mbedtls_eckeydh_info.name) const volatile dmod_mbedtls_eckeydh_info_name DMOD_GLOBAL_POINTER = "EC_DH";
+static __typeof__(mbedtls_eckeydh_info.can_do) const volatile dmod_mbedtls_eckeydh_info_can_do DMOD_GLOBAL_POINTER = eckeydh_can_do;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_eckeydh_info(void)
+{
+    mbedtls_eckeydh_info.name = dmod_mbedtls_eckeydh_info_name;
+    mbedtls_eckeydh_info.can_do = dmod_mbedtls_eckeydh_info_can_do;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_eckeydh_info = {
     .type = MBEDTLS_PK_ECKEY_DH,
     .name = "EC_DH",
@@ -524,6 +618,7 @@ const mbedtls_pk_info_t mbedtls_eckeydh_info = {
     .sign_rs_func = NULL,
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
 
 #if defined(PSA_HAVE_ALG_SOME_ECDSA)
 static int ecdsa_can_do(mbedtls_pk_type_t type)
@@ -531,6 +626,61 @@ static int ecdsa_can_do(mbedtls_pk_type_t type)
     return type == MBEDTLS_PK_ECDSA;
 }
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_ecdsa_info 1
+mbedtls_pk_info_t mbedtls_ecdsa_info = { .type = MBEDTLS_PK_ECDSA };
+static __typeof__(mbedtls_ecdsa_info.name) const volatile dmod_mbedtls_ecdsa_info_name DMOD_GLOBAL_POINTER = "ECDSA";
+static __typeof__(mbedtls_ecdsa_info.can_do) const volatile dmod_mbedtls_ecdsa_info_can_do DMOD_GLOBAL_POINTER = ecdsa_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_ecdsa_info.verify_func) const volatile dmod_mbedtls_ecdsa_info_verify_func DMOD_GLOBAL_POINTER = ecdsa_verify_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_ecdsa_info.sign_func) const volatile dmod_mbedtls_ecdsa_info_sign_func DMOD_GLOBAL_POINTER = ecdsa_sign_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_ecdsa_info.verify_rs_func) const volatile dmod_mbedtls_ecdsa_info_verify_rs_func DMOD_GLOBAL_POINTER = eckey_verify_rs_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_ecdsa_info.sign_rs_func) const volatile dmod_mbedtls_ecdsa_info_sign_rs_func DMOD_GLOBAL_POINTER = eckey_sign_rs_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY) || defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_ecdsa_info.rs_alloc_func) const volatile dmod_mbedtls_ecdsa_info_rs_alloc_func DMOD_GLOBAL_POINTER = eckey_rs_alloc;
+static __typeof__(mbedtls_ecdsa_info.rs_free_func) const volatile dmod_mbedtls_ecdsa_info_rs_free_func DMOD_GLOBAL_POINTER = eckey_rs_free;
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY || PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_ecdsa_info(void)
+{
+    mbedtls_ecdsa_info.name = dmod_mbedtls_ecdsa_info_name;
+    mbedtls_ecdsa_info.can_do = dmod_mbedtls_ecdsa_info_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_ecdsa_info.verify_func = dmod_mbedtls_ecdsa_info_verify_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_ecdsa_info.sign_func = dmod_mbedtls_ecdsa_info_sign_func;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_ecdsa_info.verify_rs_func = dmod_mbedtls_ecdsa_info_verify_rs_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_ecdsa_info.sign_rs_func = dmod_mbedtls_ecdsa_info_sign_rs_func;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY) || defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_ecdsa_info.rs_alloc_func = dmod_mbedtls_ecdsa_info_rs_alloc_func;
+    mbedtls_ecdsa_info.rs_free_func = dmod_mbedtls_ecdsa_info_rs_free_func;
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY || PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_ecdsa_info = {
     .type = MBEDTLS_PK_ECDSA,
     .name = "ECDSA",
@@ -562,6 +712,7 @@ const mbedtls_pk_info_t mbedtls_ecdsa_info = {
 #endif /* PSA_HAVE_ALG_ECDSA_VERIFY || PSA_HAVE_ALG_ECDSA_SIGN */
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
 #endif /* PSA_HAVE_ALG_SOME_ECDSA */
 #endif /* PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY */
 
@@ -572,6 +723,37 @@ static int ecdsa_opaque_can_do(mbedtls_pk_type_t type)
            type == MBEDTLS_PK_ECDSA;
 }
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_ecdsa_opaque_info 1
+mbedtls_pk_info_t mbedtls_ecdsa_opaque_info = { .type = MBEDTLS_PK_OPAQUE };
+static __typeof__(mbedtls_ecdsa_opaque_info.name) const volatile dmod_mbedtls_ecdsa_opaque_info_name DMOD_GLOBAL_POINTER = "Opaque";
+static __typeof__(mbedtls_ecdsa_opaque_info.can_do) const volatile dmod_mbedtls_ecdsa_opaque_info_can_do DMOD_GLOBAL_POINTER = ecdsa_opaque_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+static __typeof__(mbedtls_ecdsa_opaque_info.verify_func) const volatile dmod_mbedtls_ecdsa_opaque_info_verify_func DMOD_GLOBAL_POINTER = ecdsa_opaque_verify_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+static __typeof__(mbedtls_ecdsa_opaque_info.sign_func) const volatile dmod_mbedtls_ecdsa_opaque_info_sign_func DMOD_GLOBAL_POINTER = ecdsa_opaque_sign_wrap;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_ecdsa_opaque_info(void)
+{
+    mbedtls_ecdsa_opaque_info.name = dmod_mbedtls_ecdsa_opaque_info_name;
+    mbedtls_ecdsa_opaque_info.can_do = dmod_mbedtls_ecdsa_opaque_info_can_do;
+#if defined(PSA_HAVE_ALG_ECDSA_VERIFY)
+    mbedtls_ecdsa_opaque_info.verify_func = dmod_mbedtls_ecdsa_opaque_info_verify_func;
+#else /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#endif /* PSA_HAVE_ALG_ECDSA_VERIFY */
+#if defined(PSA_HAVE_ALG_ECDSA_SIGN)
+    mbedtls_ecdsa_opaque_info.sign_func = dmod_mbedtls_ecdsa_opaque_info_sign_func;
+#else /* PSA_HAVE_ALG_ECDSA_SIGN */
+#endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_ecdsa_opaque_info = {
     .type = MBEDTLS_PK_OPAQUE,
     .name = "Opaque",
@@ -593,6 +775,7 @@ const mbedtls_pk_info_t mbedtls_ecdsa_opaque_info = {
     .rs_free_func = NULL,
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
 #endif /* PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY */
 
 static int rsa_opaque_can_do(mbedtls_pk_type_t type)
@@ -650,6 +833,23 @@ static int rsa_opaque_sign_wrap(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg
 #endif /* PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC */
 }
 
+#if defined(MBEDTLS_DMOD_C)
+#define DMOD_HAS_mbedtls_rsa_opaque_info 1
+mbedtls_pk_info_t mbedtls_rsa_opaque_info = { .type = MBEDTLS_PK_OPAQUE };
+static __typeof__(mbedtls_rsa_opaque_info.name) const volatile dmod_mbedtls_rsa_opaque_info_name DMOD_GLOBAL_POINTER = "Opaque";
+static __typeof__(mbedtls_rsa_opaque_info.can_do) const volatile dmod_mbedtls_rsa_opaque_info_can_do DMOD_GLOBAL_POINTER = rsa_opaque_can_do;
+static __typeof__(mbedtls_rsa_opaque_info.sign_func) const volatile dmod_mbedtls_rsa_opaque_info_sign_func DMOD_GLOBAL_POINTER = rsa_opaque_sign_wrap;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+static void dmod_init_mbedtls_rsa_opaque_info(void)
+{
+    mbedtls_rsa_opaque_info.name = dmod_mbedtls_rsa_opaque_info_name;
+    mbedtls_rsa_opaque_info.can_do = dmod_mbedtls_rsa_opaque_info_can_do;
+    mbedtls_rsa_opaque_info.sign_func = dmod_mbedtls_rsa_opaque_info_sign_func;
+#if defined(MBEDTLS_ECP_RESTARTABLE)
+#endif /* MBEDTLS_ECP_RESTARTABLE */
+}
+#else
 const mbedtls_pk_info_t mbedtls_rsa_opaque_info = {
     .type = MBEDTLS_PK_OPAQUE,
     .name = "Opaque",
@@ -663,5 +863,30 @@ const mbedtls_pk_info_t mbedtls_rsa_opaque_info = {
     .rs_free_func = NULL,
 #endif /* MBEDTLS_ECP_RESTARTABLE */
 };
+#endif
+
+#if defined(MBEDTLS_DMOD_C)
+void mbedtls_dmod_pk_init(void)
+{
+#if defined(DMOD_HAS_mbedtls_rsa_info)
+    dmod_init_mbedtls_rsa_info();
+#endif
+#if defined(DMOD_HAS_mbedtls_eckey_info)
+    dmod_init_mbedtls_eckey_info();
+#endif
+#if defined(DMOD_HAS_mbedtls_eckeydh_info)
+    dmod_init_mbedtls_eckeydh_info();
+#endif
+#if defined(DMOD_HAS_mbedtls_ecdsa_info)
+    dmod_init_mbedtls_ecdsa_info();
+#endif
+#if defined(DMOD_HAS_mbedtls_ecdsa_opaque_info)
+    dmod_init_mbedtls_ecdsa_opaque_info();
+#endif
+#if defined(DMOD_HAS_mbedtls_rsa_opaque_info)
+    dmod_init_mbedtls_rsa_opaque_info();
+#endif
+}
+#endif
 
 #endif /* MBEDTLS_PK_C */
